@@ -1,0 +1,17 @@
+Deploying a Retrieval-Augmented Generation system in production requires careful engineering considerations.
+Performance, reliability, and observability are critical factors that go beyond simple experimentation.
+
+Chunk size and overlap must be chosen carefully. Smaller chunks improve retrieval precision but increase storage and indexing
+costs. Larger chunks reduce the number of vectors but may introduce irrelevant context into the prompt.
+
+Latency is another major concern. Embedding generation, vector search, and language model inference all add to response time.
+Production systems often cache embeddings and use optimized vector indexes to meet latency requirements.
+
+Monitoring is essential to detect hallucinations, retrieval failures, and degraded model performance. Logging retrieved
+documents alongside generated answers helps engineers debug incorrect outputs.
+
+Security and access control are also important. Many RAG systems operate on sensitive internal documents, so strict permission
+checks must be enforced at the retrieval layer.
+
+In practice, LangChain is often combined with FastAPI for serving APIs, Docker for containerization, and cloud platforms such
+as AWS or GCP for deployment. These components help ensure scalability and maintainability in real-world applications.

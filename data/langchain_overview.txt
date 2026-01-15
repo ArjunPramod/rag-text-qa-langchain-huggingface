@@ -1,0 +1,20 @@
+LangChain is an open-source framework designed to help developers build applications powered by large language models (LLMs).
+Rather than focusing on training or fine-tuning models, LangChain focuses on orchestration. Orchestration refers to the process
+of connecting language models with external data sources, tools, memory, and application logic.
+
+A key motivation behind LangChain is the limitation of standalone language models. LLMs are trained on large but fixed datasets
+and do not have direct access to private documents, internal company knowledge, or real-time information. LangChain addresses
+this limitation by allowing developers to plug in external data sources and retrieval systems.
+
+LangChain provides abstractions for loading documents from various sources such as text files, PDFs, web pages, and databases.
+These documents can then be transformed, split into chunks, embedded, and stored in vector databases for efficient retrieval.
+
+Another important feature of LangChain is its support for prompt management. Instead of hardcoding prompts, developers can
+define reusable prompt templates that clearly specify instructions, context, and expected outputs. This helps reduce
+hallucinations and improves consistency.
+
+LangChain also supports building conversational applications. By adding memory components, applications can remember past
+user interactions, enabling multi-turn conversations. This is useful for chatbots, virtual assistants, and tutoring systems.
+
+Overall, LangChain is best understood as an engineering framework. It does not replace machine learning fundamentals but
+provides higher-level building blocks that allow engineers to turn language models into reliable, data-aware applications.

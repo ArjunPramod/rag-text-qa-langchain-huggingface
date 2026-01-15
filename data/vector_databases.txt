@@ -1,0 +1,16 @@
+Vector databases are specialized databases designed to store and search high-dimensional vectors efficiently.
+In the context of natural language processing, vectors usually represent embeddings generated from text using neural networks.
+
+Embeddings capture the semantic meaning of text. Sentences with similar meanings are mapped to vectors that are close to each
+other in vector space. This allows systems to perform semantic search rather than relying on exact keyword matches.
+
+FAISS is a popular open-source library developed by Meta for efficient similarity search and clustering of dense vectors.
+It is optimized for performance and can handle large-scale datasets with millions of vectors. FAISS supports various indexing
+strategies that trade off accuracy and speed.
+
+In RAG systems, vector databases like FAISS are used to retrieve the most relevant document chunks given a user query.
+The quality of retrieval directly impacts the quality of the generated answer. If irrelevant chunks are retrieved, the model
+may produce misleading or incomplete responses.
+
+Other vector databases include Chroma, Pinecone, Weaviate, and Milvus. The choice of vector database depends on factors such as
+dataset size, latency requirements, persistence needs, and deployment environment.
