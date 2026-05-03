@@ -207,6 +207,18 @@ class DocumentManager:
         
         return enhanced_docs
 
+    def _clear_disk_index(self):
+        import shutil
+        index_path = os.path.join(self.index_dir, "index")
+        if os.path.exists(index_path):
+            try:
+                if os.path.isdir(index_path):
+                    shutil.rmtree(index_path)
+                else:
+                    os.remove(index_path)
+            except Exception:
+                pass
+
     def _rebuild_full_index(self, files: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         all_docs: List[Document] = []
         new_state_files: Dict[str, FileIndexState] = {}
@@ -234,16 +246,15 @@ class DocumentManager:
         
         if all_docs:
             self.vectorstore = FAISS.from_documents(all_docs, self.embeddings)
+            index_path = os.path.join(self.index_dir, "index")
+            self.vectorstore.save_local(index_path)
         else:
             self.vectorstore = None
+            self._clear_disk_index()
         
         self.state.files = new_state_files
         self.state.updated_at = datetime.now().timestamp()
         self._save_state()
-        
-        if self.vectorstore:
-            index_path = os.path.join(self.index_dir, "index")
-            self.vectorstore.save_local(index_path)
         
         return {
             "rebuilt": True,
@@ -321,8 +332,6 @@ if doc_manager.load_existing_index():
 sync_result = doc_manager.sync_index()
 print(f"Index sync complete: {sync_result}")
 
-retriever = doc_manager.get_retriever()
-
 hf_pipeline = pipeline(
     task="text2text-generation",
     model="google/flan-t5-base",
@@ -355,20 +364,9 @@ Answer:
 """
 )
 
-rag_chain = (
-    {
-        "context": retriever,
-        "question": RunnablePassthrough(),
-    }
-    | prompt
-    | llm
-)
 
-
-def get_source_chunks(question: str) -> List[SourceChunk]:
-    docs = retriever.invoke(question)
+def docs_to_source_chunks(docs: List[Document]) -> List[SourceChunk]:
     chunks = []
-    
     for doc in docs:
         metadata = doc.metadata
         chunk = SourceChunk(
@@ -380,8 +378,11 @@ def get_source_chunks(question: str) -> List[SourceChunk]:
             file_hash=metadata.get("file_hash", "")
         )
         chunks.append(chunk)
-    
     return chunks
+
+
+def format_docs(docs: List[Document]) -> str:
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
 @app.post("/ask", response_model=AnswerResponse)
@@ -393,10 +394,29 @@ def ask_question(req: QuestionRequest):
             "sources": []
         }
 
-    answer = rag_chain.invoke(req.question)
-    clean_answer = " ".join(answer.replace("\n", " ").split())
-    source_chunks = get_source_chunks(req.question)
+    if doc_manager.vectorstore is None:
+        return {
+            "question": req.question,
+            "answer": "I do not know based on the provided documents.",
+            "sources": []
+        }
 
+    retriever = doc_manager.get_retriever()
+    retrieved_docs = retriever.invoke(req.question)
+
+    context = format_docs(retrieved_docs)
+    chain = (
+        {
+            "context": RunnablePassthrough(),
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+    )
+    answer = chain.invoke({"context": context, "question": req.question})
+    clean_answer = " ".join(answer.replace("\n", " ").split())
+
+    source_chunks = docs_to_source_chunks(retrieved_docs)
     source_responses = [
         SourceChunkResponse(
             source=chunk.source,
@@ -418,8 +438,6 @@ def ask_question(req: QuestionRequest):
 @app.post("/sync-index")
 def sync_index_endpoint(force_rebuild: bool = False):
     result = doc_manager.sync_index(force_rebuild=force_rebuild)
-    global retriever
-    retriever = doc_manager.get_retriever()
     return result
 
 
