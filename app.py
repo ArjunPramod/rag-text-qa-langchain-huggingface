@@ -405,15 +405,8 @@ def ask_question(req: QuestionRequest):
     retrieved_docs = retriever.invoke(req.question)
 
     context = format_docs(retrieved_docs)
-    chain = (
-        {
-            "context": RunnablePassthrough(),
-            "question": RunnablePassthrough(),
-        }
-        | prompt
-        | llm
-    )
-    answer = chain.invoke({"context": context, "question": req.question})
+    formatted_prompt = prompt.format(context=context, question=req.question)
+    answer = llm.invoke(formatted_prompt)
     clean_answer = " ".join(answer.replace("\n", " ").split())
 
     source_chunks = docs_to_source_chunks(retrieved_docs)
